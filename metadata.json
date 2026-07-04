@@ -1,0 +1,6 @@
+{
+  "name": "ReportAI",
+  "description": "An AI-powered business report generator that creates stunning self-contained reports with Chart.js, KPI cards, tables, and AI insights from Google Sheets or pasted CSV data.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

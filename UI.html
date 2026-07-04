@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ReportAI - Business Report Generator</title>
+    <!-- Styling stylesheet imported from Apps Script Style.html -->
+    <?= include('Style'); ?>
+  </head>
+  <body>
+    <div class="app-container">
+      
+      <!-- App Header and Navigation -->
+      <header>
+        <div class="logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+          <span>ReportAI</span>
+          <span style="font-size: 11px; padding: 2px 6px; background-color: var(--primary-light); color: var(--primary); border-radius: 6px; font-weight: 700; font-family: sans-serif; letter-spacing: 0.5px;">PRO</span>
+        </div>
+        
+        <div class="nav-tabs">
+          <button class="tab-btn active" data-tab="generate" onclick="switchTab('generate')">
+            <span>✨</span> Generate Report
+          </button>
+          <button class="tab-btn" data-tab="schedules" onclick="switchTab('schedules')">
+            <span>⏰</span> Schedules
+          </button>
+          <button class="tab-btn" data-tab="history" onclick="switchTab('history')">
+            <span>📁</span> History
+          </button>
+          <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')">
+            <span>⚙️</span> Settings
+          </button>
+        </div>
+        
+        <div id="header-company" style="font-size: 13px; font-weight: 600; color: var(--text-muted); padding: 6px 12px; border-left: 2px solid var(--border);">
+          <?= companyName ?>
+        </div>
+      </header>
+      
+      <!-- TAB 1: Generate Report -->
+      <div id="generate-tab" class="tab-content active">
+        <div class="grid-two-col">
+          
+          <!-- Column A: Settings Panel -->
+          <div>
+            <!-- Section A: Data Source -->
+            <div class="card">
+              <div class="card-title">
+                <span>📊</span> 1. Connected Data Source
+              </div>
+              <div class="form-group">
+                <label for="sheetUrl">Google Spreadsheet URL</label>
+                <input type="text" id="sheetUrl" class="input-control" placeholder="https://docs.google.com/spreadsheets/d/.../edit" />
+                <div class="input-desc">Paste your complete spreadsheet URL here. Make sure your script has sharing access.</div>
+              </div>
+              
+              <div class="form-group" style="display: grid; grid-template-columns: 1fr 120px; gap: 12px;">
+                <div>
+                  <label for="sheetName">Sheet Tab Name (Optional)</label>
+                  <input type="text" id="sheetName" class="input-control" placeholder="Sheet1" />
+                </div>
+                <div style="display: flex; align-items: flex-end;">
+                  <button type="button" onclick="previewSheetData()" class="btn btn-secondary" style="height: 42px;">Preview</button>
+                </div>
+              </div>
+              
+              <div style="text-align: center; margin: 12px 0; color: var(--text-muted); font-size: 11px; font-weight: 600; position: relative;">
+                <span style="background-color: white; padding: 0 8px; z-index: 5; position: relative;">OR PASTE TEXT DATA DIRECTLY</span>
+                <div style="position: absolute; top: 50%; left: 0; right: 0; border-top: 1px dashed var(--border); z-index: 1;"></div>
+              </div>
+              
+              <div class="form-group">
+                <label for="csvData">Raw CSV / Tabbed Text Data</label>
+                <textarea id="csvData" class="input-control" rows="3" placeholder="Product,Revenue,Date&#10;Widget A,1200,2025-06-01&#10;Widget B,1500,2025-06-02" style="font-family: monospace; font-size: 11px; resize: vertical;"></textarea>
+              </div>
+            </div>
+            
+            <!-- Section B: Report Settings -->
+            <div class="card">
+              <div class="card-title">
+                <span>🗓️</span> 2. Report Configuration
+              </div>
+              <div class="form-group">
+                <label for="reportTitle">Report Document Title</label>
+                <input type="text" id="reportTitle" class="input-control" placeholder="Q2 Executive Sales Summary" />
+              </div>
+              
+              <div class="form-group">
+                <label>Reporting Period Type</label>
+                <div class="options-grid">
+                  <label class="option-card type-card active" onclick="selectTypeCard(this.querySelector('input'))">
+                    <input type="radio" name="reportType" value="daily" checked />
+                    <span class="option-icon">🌞</span>
+                    <span class="option-title">Daily</span>
+                    <span class="option-desc">Past 24 hours</span>
+                  </label>
+                  <label class="option-card type-card" onclick="selectTypeCard(this.querySelector('input'))">
+                    <input type="radio" name="reportType" value="weekly" />
+                    <span class="option-icon">📅</span>
+                    <span class="option-title">Weekly</span>
+                    <span class="option-desc">Past 7 days</span>
+                  </label>
+                  <label class="option-card type-card" onclick="selectTypeCard(this.querySelector('input'))">
+                    <input type="radio" name="reportType" value="monthly" />
+                    <span class="option-icon">🪐</span>
+                    <span class="option-title">Monthly</span>
+                    <span class="option-desc">Past 30 days</span>
+                  </label>
+                  <label class="option-card type-card" onclick="selectTypeCard(this.querySelector('input'))">
+                    <input type="radio" name="reportType" value="custom" />
+                    <span class="option-icon">⏱️</span>
+                    <span class="option-title">Custom</span>
+                    <span class="option-desc">Select range</span>
+                  </label>
+                </div>
+              </div>
+              
+              <!-- Custom Date Range picker (hidden by default) -->
+              <div id="custom-date-group" style="display: none; background-color: #f8fafc; padding: 14px; border-radius: 12px; margin-bottom: 14px; border: 1px solid var(--border);">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                  <div class="form-group" style="margin-bottom:0">
+                    <label for="startDate">Start Date</label>
+                    <input type="date" id="startDate" class="input-control" />
+                  </div>
+                  <div class="form-group" style="margin-bottom:0">
+                    <label for="endDate">End Date</label>
+                    <input type="date" id="endDate" class="input-control" />
+                  </div>
+                </div>
+                <div class="chips-container" style="margin-top: 10px;">
+                  <button type="button" class="prompt-chip" onclick="setQuickDate(1)">Yesterday</button>
+                  <button type="button" class="prompt-chip" onclick="setQuickDate(7)">Last 7 Days</button>
+                  <button type="button" class="prompt-chip" onclick="setQuickDate(30)">Last 30 Days</button>
+                </div>
+              </div>
+              
+              <div class="form-group" style="margin-bottom:0">
+                <label for="companyNameInput">Target Company/Brand Name</label>
+                <input type="text" id="companyNameInput" class="input-control" placeholder="Acme Inc." />
+              </div>
+            </div>
+            
+            <!-- Section C: AI Engine & Prompts -->
+            <div class="card">
+              <div class="card-title">
+                <span>🤖</span> 3. AI Analytics Engine
+              </div>
+              
+              <div class="form-group">
+                <label>Select AI Engine Model</label>
+                <div class="options-grid">
+                  <label class="option-card model-card active" onclick="selectModelCard(this.querySelector('input'))">
+                    <input type="radio" name="aiModel" value="gemini" checked />
+                    <div class="option-icon" style="color: #4f46e5;">✨</div>
+                    <div class="option-title">Google Gemini</div>
+                    <div class="option-desc">Fast & precise</div>
+                  </label>
+                  <label class="option-card model-card" onclick="selectModelCard(this.querySelector('input'))">
+                    <input type="radio" name="aiModel" value="openai" />
+                    <div class="option-icon" style="color: #10a37f;">🟢</div>
+                    <div class="option-title">OpenAI GPT-4o</div>
+                    <div class="option-desc">Highly strategic</div>
+                  </label>
+                  <label class="option-card model-card" onclick="selectModelCard(this.querySelector('input'))">
+                    <input type="radio" name="aiModel" value="claude" />
+                    <div class="option-icon" style="color: #d97757;">🔸</div>
+                    <div class="option-title">Claude 3.5</div>
+                    <div class="option-desc">Rich narrative</div>
+                  </label>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="userPrompt">Natural Language Prompt Instructions</label>
+                <textarea id="userPrompt" class="input-control" rows="4" placeholder="Create a weekly sales performance summary. Group findings by product line, calculate total revenue trends, point out underperforming products, and recommend corrective actions."></textarea>
+                <div class="input-desc">Prompt guidance controls what insights, metrics, and KPI highlights the AI focuses on.</div>
+                
+                <div class="chips-container">
+                  <div class="prompt-chip" onclick="fillPrompt('Create a comprehensive sales report. Highlight our top-performing products, overall revenue growth percentage, and pinpoint any items with a sudden drop in sales over 15%')">Weekly Sales Performance Summary</div>
+                  <div class="prompt-chip" onclick="fillPrompt('Daily operations summary. Flag anomalies, compute operational metrics, and output clear warnings for any high latency or errors.')">Daily Operations & Anomalies</div>
+                  <div class="prompt-chip" onclick="fillPrompt('Monthly executive overview. Generate dynamic high-level KPI cards, clear bar/line distribution trends, and 3 strategic recommendations for management.')">Executive Strategic Dashboard</div>
+                </div>
+              </div>
+              
+              <div style="margin-top: 24px; display: flex; gap: 12px;">
+                <button type="button" class="btn btn-secondary" onclick="openScheduleModal()" style="flex: 1; border-color: var(--primary); color: var(--primary);">
+                  ⏰ Schedule...
+                </button>
+                <button type="button" class="btn btn-primary" onclick="startReportGeneration()" style="flex: 2;">
+                  ✨ Generate Report
+                </button>
+              </div>
+            </div>
+            
+          </div>
+          
+          <!-- Column B: Report Preview Section -->
+          <div>
+            <div id="empty-output-state" class="card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; text-align: center; border-style: dashed; border-width: 2px;">
+              <div style="font-size: 52px; margin-bottom: 16px;">📊</div>
+              <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">No Report Generated Yet</h2>
+              <p style="color: var(--text-muted); font-size: 14px; max-width: 320px;">Connect a data sheet, select report settings, and hit "Generate Report" to view your stunning AI-generated business report here.</p>
+            </div>
+            
+            <!-- Output container (hidden until run succeeds) -->
+            <div id="report-output-section" style="display: none;">
+              <div class="preview-wrapper">
+                <div class="preview-toolbar">
+                  <div class="preview-title-text" id="preview-title">Report Title</div>
+                  <div class="preview-actions">
+                    <button class="btn btn-secondary" onclick="printReportPdf()" style="padding: 6px 12px; font-size: 12px; width: auto;">🖨️ Print PDF</button>
+                    <button class="btn btn-secondary" onclick="downloadReportHtml()" style="padding: 6px 12px; font-size: 12px; width: auto;">⬇️ Download</button>
+                    <button class="btn btn-secondary" onclick="copyShareLink()" style="padding: 6px 12px; font-size: 12px; width: auto;">📋 Share Link</button>
+                    <button class="btn btn-primary" onclick="openEmailModal()" style="padding: 6px 14px; font-size: 12px; width: auto;">📧 Email</button>
+                  </div>
+                </div>
+                <div class="iframe-container">
+                  <iframe id="reportFrame" name="reportFrame" src="about:blank"></iframe>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+      
+      <!-- TAB 2: Schedules -->
+      <div id="schedules-tab" class="tab-content">
+        <div class="card">
+          <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>📅 Report Automation Schedules</span>
+            <button onclick="openScheduleModal()" class="btn btn-primary" style="width: auto; padding: 8px 16px;">+ New Schedule</button>
+          </div>
+          
+          <div class="table-responsive">
+            <table class="schedule-table">
+              <thead>
+                <tr>
+                  <th>Report Title</th>
+                  <th>Source Tab</th>
+                  <th>Frequency</th>
+                  <th>Recipients</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="schedule-table-body">
+                <!-- Injected via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+      <!-- TAB 3: History -->
+      <div id="history-tab" class="tab-content">
+        <div class="card">
+          <div class="card-title">
+            <span>📁 Drive Saved Reports (Last 20)</span>
+          </div>
+          <div class="history-grid" id="history-list-grid">
+            <!-- Injected via JavaScript -->
+          </div>
+        </div>
+      </div>
+      
+      <!-- TAB 4: Settings -->
+      <div id="settings-tab" class="tab-content">
+        <div class="grid-two-col">
+          
+          <!-- Branding settings -->
+          <div>
+            <div class="card">
+              <div class="card-title">⚙️ Secure AI API Settings</div>
+              <div class="form-group">
+                <label for="settings-geminiKey">Google Gemini API Key</label>
+                <div style="display: flex; gap: 8px;">
+                  <input type="password" id="settings-geminiKey" class="input-control" />
+                  <button type="button" class="btn btn-secondary" onclick="togglePasswordInput(this, 'settings-geminiKey')" style="width: 42px; padding: 0;">👁️</button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="settings-openaiKey">OpenAI GPT API Key</label>
+                <div style="display: flex; gap: 8px;">
+                  <input type="password" id="settings-openaiKey" class="input-control" />
+                  <button type="button" class="btn btn-secondary" onclick="togglePasswordInput(this, 'settings-openaiKey')" style="width: 42px; padding: 0;">👁️</button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="settings-claudeKey">Anthropic Claude API Key</label>
+                <div style="display: flex; gap: 8px;">
+                  <input type="password" id="settings-claudeKey" class="input-control" />
+                  <button type="button" class="btn btn-secondary" onclick="togglePasswordInput(this, 'settings-claudeKey')" style="width: 42px; padding: 0;">👁️</button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-title">🗏 Report Password Protection</div>
+              <div class="form-group" style="margin-bottom:0">
+                <label for="settings-reportPassword">Viewer Security Code (Optional)</label>
+                <input type="password" id="settings-reportPassword" class="input-control" placeholder="Enter a password" />
+                <div class="input-desc">If set, users accessing the report URL from Drive will need to pass this password check.</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Public Preferences settings -->
+          <div>
+            <div class="card">
+              <div class="card-title">🎨 Corporate Branding Settings</div>
+              <div class="form-group">
+                <label for="settings-companyName">Company Brand Name</label>
+                <input type="text" id="settings-companyName" class="input-control" />
+              </div>
+              <div class="form-group">
+                <label for="settings-logoUrl">Logo Image URL</label>
+                <input type="text" id="settings-logoUrl" class="input-control" />
+              </div>
+              <div class="form-group">
+                <label for="settings-accentColor">Brand Accent Color</label>
+                <input type="color" id="settings-accentColor" class="input-control" style="height: 42px; padding: 4px;" />
+              </div>
+              <div class="form-group">
+                <label for="settings-footerText">Custom Footer Text</label>
+                <input type="text" id="settings-footerText" class="input-control" />
+              </div>
+            </div>
+            
+            <div class="card">
+              <div class="card-title">📈 System Preferences</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div class="form-group">
+                  <label for="settings-timezone">Timezone</label>
+                  <select id="settings-timezone" class="input-control">
+                    <option value="GMT">GMT (Greenwich Mean Time)</option>
+                    <option value="EST">EST (Eastern Standard Time)</option>
+                    <option value="CST">CST (Central Standard Time)</option>
+                    <option value="PST">PST (Pacific Standard Time)</option>
+                    <option value="IST">IST (Indian Standard Time)</option>
+                    <option value="AEST">AEST (Australian Eastern Time)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="settings-defaultAiModel">Default AI Engine</label>
+                  <select id="settings-defaultAiModel" class="input-control">
+                    <option value="gemini">Google Gemini</option>
+                    <option value="openai">OpenAI GPT-4o</option>
+                    <option value="claude">Anthropic Claude</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="settings-defaultReportType">Default Period Type</label>
+                <select id="settings-defaultReportType" class="input-control">
+                  <option value="daily">Daily Reports</option>
+                  <option value="weekly">Weekly Reports</option>
+                  <option value="monthly">Monthly Reports</option>
+                </select>
+              </div>
+              
+              <button onclick="saveAppSettings()" class="btn btn-primary">Save System Settings</button>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+      
+    </div> <!-- End App Container -->
+    
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+    
+    <!-- MODAL: Step loading screen -->
+    <div id="loading-overlay" class="loading-overlay">
+      <div class="loading-box">
+        <div class="spinner"></div>
+        <h3 class="step-title">Report Generating</h3>
+        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">AI is analysing your metrics and generating trends...</p>
+        
+        <div class="steps-list">
+          <div class="step-item pending" id="step-data">
+            <div class="step-bullet"></div>
+            <span>Step 1: Reading spreadsheet data...</span>
+          </div>
+          <div class="step-item pending" id="step-ai">
+            <div class="step-bullet"></div>
+            <span>Step 2: Performing AI business analysis...</span>
+          </div>
+          <div class="step-item pending" id="step-html">
+            <div class="step-bullet"></div>
+            <span>Step 3: Constructing self-contained dashboard...</span>
+          </div>
+          <div class="step-item pending" id="step-save">
+            <div class="step-bullet"></div>
+            <span>Step 4: Compiling files to Google Drive...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- MODAL: Data Preview Modal -->
+    <div id="preview-modal" class="modal-overlay">
+      <div class="modal" style="max-width: 800px;">
+        <div class="modal-header">
+          <h3 class="modal-title">📊 Google Sheet Data Preview</h3>
+          <button class="modal-close" onclick="closeModal('preview-modal')">×</button>
+        </div>
+        <div id="preview-modal-body" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+          <!-- Inline table injected dynamically -->
+        </div>
+        <button class="btn btn-primary" onclick="closeModal('preview-modal')">Done</button>
+      </div>
+    </div>
+    
+    <!-- MODAL: Email Modal -->
+    <div id="email-modal" class="modal-overlay">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 class="modal-title">📧 Email This Report</h3>
+          <button class="modal-close" onclick="closeModal('email-modal')">×</button>
+        </div>
+        <div class="form-group">
+          <label for="email-recipients">Recipient Email Addresses</label>
+          <input type="text" id="email-recipients" class="input-control" placeholder="manager@company.com, team@company.com" />
+          <div class="input-desc">Separate multiple emails with commas. This will deliver the HTML report directly to their inboxes.</div>
+        </div>
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+          <button class="btn btn-secondary" onclick="closeModal('email-modal')">Cancel</button>
+          <button class="btn btn-primary" onclick="sendEmailReport()">Send Email</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- MODAL: New Schedule Automation modal -->
+    <div id="schedule-modal" class="modal-overlay">
+      <div class="modal" style="max-width: 600px;">
+        <div class="modal-header">
+          <h3 class="modal-title">⏰ Schedule Automated Report</h3>
+          <button class="modal-close" onclick="closeModal('schedule-modal')">×</button>
+        </div>
+        
+        <div style="max-height: 480px; overflow-y: auto; padding-right: 8px;">
+          <div class="form-group">
+            <label for="sched-sheetUrl">Source Spreadsheet URL</label>
+            <input type="text" id="sched-sheetUrl" class="input-control" />
+          </div>
+          <div class="form-group">
+            <label for="sched-sheetName">Source Tab Name</label>
+            <input type="text" id="sched-sheetName" class="input-control" placeholder="Sheet1" />
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div class="form-group">
+              <label for="sched-frequency">Trigger Frequency</label>
+              <select id="sched-frequency" class="input-control" onchange="handleScheduleFrequencyChange(this)">
+                <option value="daily">Run Daily</option>
+                <option value="weekly">Run Weekly</option>
+                <option value="monthly">Run Monthly</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="sched-aiModel">AI Analysis Engine</label>
+              <select id="sched-aiModel" class="input-control">
+                <option value="gemini">Google Gemini</option>
+                <option value="openai">OpenAI GPT-4o</option>
+                <option value="claude">Anthropic Claude</option>
+              </select>
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div class="form-group">
+              <label for="sched-reportType">Historical Scope</label>
+              <select id="sched-reportType" class="input-control">
+                <option value="daily">Past 24 Hours</option>
+                <option value="weekly">Past 7 Days</option>
+                <option value="monthly">Past 30 Days</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="sched-reportTitle">Document Name</label>
+              <input type="text" id="sched-reportTitle" class="input-control" />
+            </div>
+          </div>
+          
+          <!-- Weekly check selectors -->
+          <div id="weekly-days-group" style="display: none; background-color: #f8fafc; padding: 14px; border-radius: 12px; margin-bottom: 14px;">
+            <label>Run on these days of the week</label>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px;">
+              <label style="display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 13px;">
+                <input type="checkbox" class="day-cb" value="mon" /> Mon
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 13px;">
+                <input type="checkbox" class="day-cb" value="tue" /> Tue
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 13px;">
+                <input type="checkbox" class="day-cb" value="wed" /> Wed
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 13px;">
+                <input type="checkbox" class="day-cb" value="thu" /> Thu
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 13px;">
+                <input type="checkbox" class="day-cb" value="fri" /> Fri
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 13px;">
+                <input type="checkbox" class="day-cb" value="sat" /> Sat
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 13px;">
+                <input type="checkbox" class="day-cb" value="sun" /> Sun
+              </label>
+            </div>
+          </div>
+          
+          <!-- Monthly check selector -->
+          <div id="monthly-day-group" style="display: none; background-color: #f8fafc; padding: 14px; border-radius: 12px; margin-bottom: 14px;">
+            <div class="form-group" style="margin-bottom:0">
+              <label for="sched-monthlyDay">Run on day of month (1-28)</label>
+              <input type="number" id="sched-monthlyDay" min="1" max="28" value="1" class="input-control" />
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="sched-userPrompt">Report Prompt / Constraints</label>
+            <textarea id="sched-userPrompt" class="input-control" rows="3"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label for="sched-recipients">Deliver to (Comma-separated Emails)</label>
+            <input type="text" id="sched-recipients" class="input-control" placeholder="exec@company.com, clients@acme.com" />
+          </div>
+        </div>
+        
+        <div style="display: flex; gap: 12px; margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px;">
+          <button class="btn btn-secondary" onclick="closeModal('schedule-modal')">Cancel</button>
+          <button class="btn btn-primary" onclick="saveReportSchedule()">Enable Automation</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Load JavaScript -->
+    <?= include('Script'); ?>
+  </body>
+</html>
